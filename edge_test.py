@@ -56,4 +56,18 @@ eq(L.borrow("B004", "나", 26), True, "other person unaffected")
 L = LibraryLoan(); L.borrow("B005", "가", 3); L.borrow("B002", "가", 3); L.borrow("B004", "가", 1)
 eq(L.get_loans("가"), [("B004", 15), ("B002", 17), ("B005", 17)], "sort")
 eq(L.borrow("B001", "가", 3), False, "max 3")
+# 대출 정지 중에도 반납은 가능 (정지는 빌리는 것만 막음)
+L = LibraryLoan(); L.borrow("B001", "가", 1); L.borrow("B002", "가", 1)
+eq(L.return_book("B001", "가", 20), 5, "5 overdue")      # 20~24 정지
+eq(L.borrow("B003", "가", 21), False, "suspended borrow")
+eq(L.return_book("B002", "가", 21), 6, "return while suspended ok")  # 21~26 정지
+eq(L.borrow("B003", "가", 26), False, "later end wins"); eq(L.borrow("B003", "가", 27), True, "free 27")
+
+# 빌릴 때 날짜 순서는 검사하지 않음 (5일째 다음 2일째 대출도 성공)
+L = LibraryLoan()
+eq(L.borrow("B001", "가", 5), True, "day 5"); eq(L.borrow("B002", "가", 2), True, "then day 2")
+eq(L.borrow("B003", "나", 30), True, "day 30"); eq(L.borrow("B004", "다", 1), True, "then day 1 by other")
+eq(L.get_loans("가"), [("B002", 16), ("B001", 19)], "order after out-of-order borrow")
+eq(L.return_book("B002", "가", 1), -1, "return before borrow day fails")
+eq(L.return_book("B002", "가", 2), 0, "return on borrow day ok")
 print("edge_test: 모두 통과")
